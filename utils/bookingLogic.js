@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
 import { slotParser } from "./slotParser.js";
-import { convertDateToLongFormat } from "./helpers.js";
+import { convertDateToLongFormat, makeAMPM } from "./helpers.js";
 import {
   existingReservationConfig,
   slotConfig,
@@ -10,45 +10,54 @@ import {
 } from "../config.js";
 
 // First, we'll see if we already have a reservation
-async function checkForExistingBooking() {
+async function checkForExistingBooking( targetRestaurant ) {
   let config = existingReservationConfig(process.env.AUTH_TOKEN);
-  let venueId = process.env.VENUE_ID;
+  let venueID = targetRestaurant.venueID;
+  let resDate = targetRestaurant.resDate;
   try {
     const response = await axios.request(config);
-    if (response.data.reservations[0]?.venue?.id == venueId) {
-      console.log(`You already have a reservation for tonight!`);
-      return true;
-    } else {
-      return false;
-    }
+
+    for (let i = 0; i < response.data.reservations.length; i++) {
+      if (response.data.reservations[i]?.venue?.id == venueID
+        && response.data.reservations[i]?.day == resDate )
+      {
+        return true;
+      }
+    } return false
   } catch (error) {
     console.log(error);
   }
 }
 
-// Then, we'll check to see if there are any reservations available
-async function fetchDataAndParseSlots() {
-  try {
-    const response = await axios.request(slotConfig);
-    if (response.data.results.venues.length === 0) {
-      console.log(
-        "No slots available. Please run again after reservations open.",
-      );
-      return false;
-    }
-    console.log(
-      `Checking for reservations at ${
-        response.data.results.venues[0].venue.name
-      } on ${convertDateToLongFormat(process.env.DATE)} for ${
-        process.env.PARTY_SIZE
-      } people...`,
-    );
-    let slots = response.data.results.venues[0].slots;
-    const slotId = await slotParser(slots);
-    return slotId;
+// Alt version: returns bookings so can recheck for multiple days
+async function getExistingBookings() {
+  let config = existingReservationConfig(process.env.AUTH_TOKEN);
+    try {
+    const response = await axios.request(config);
+    return response.data.reservations;
   } catch (error) {
     console.log(error);
+    return null;
   }
+}
+
+// Then, we'll check to see if there are any reservations available
+async function singleDayFetch( targetRestaurant ) {
+  try {
+    let resDate = targetRestaurant.resDate;
+    let partySize = targetRestaurant.partySize;
+    let venueId = targetRestaurant.venueID;
+    let config = slotConfig(resDate, partySize, venueId);
+
+    const response = await axios.request(config);
+    if (response.data.results.venues.length === 0) {
+      console.log("Error: Please run again after reservations open.");
+      return false;
+    }
+    let openSlots = response.data.results.venues[0].slots;
+    if(openSlots.length>0){return openSlots;}
+    else{return null;}
+  } catch (error) {/* console.log(error); */}
 }
 
 // If there are reservations available, we'll grab the booking token
@@ -87,7 +96,8 @@ async function makeBooking(book_token) {
 
 export {
   checkForExistingBooking,
-  fetchDataAndParseSlots,
+  getExistingBookings,
+  singleDayFetch,
   getBookingConfig,
   makeBooking,
 };

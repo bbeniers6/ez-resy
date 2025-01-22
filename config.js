@@ -27,10 +27,11 @@ function existingReservationConfig(authToken) {
   return configObject;
 }
 
-let slotConfig = {
+function slotConfig(resDate, partySize, venueID) {
+  let slotObject = {
   method: 'get',
   maxBodyLength: Infinity,
-  url: `https://api.resy.com/4/find?lat=0&long=0&day=${process.env.DATE}&party_size=${process.env.PARTY_SIZE}&venue_id=${process.env.VENUE_ID}`,
+  url: `https://api.resy.com/4/find?lat=0&long=0&day=${resDate}&party_size=${partySize}&venue_id=${venueID}`,
   headers: {
     authority: 'api.resy.com',
     accept: 'application/json, text/plain, */*',
@@ -48,8 +49,10 @@ let slotConfig = {
     'user-agent':
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
     'x-origin': 'https://resy.com',
-  },
-};
+    },
+  };
+  return slotObject;
+}
 
 function bookingConfig(token) {
   // parse token as url encoded string

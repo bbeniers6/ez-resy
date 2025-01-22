@@ -1,11 +1,29 @@
 import jwt from 'jsonwebtoken';
 
+// For format: '2025-01-27 17:00:00'
 function convertTimeToTwelveHourFormat(time) {
   const timeString = time.split(' ')[1];
   const [hour, minutes] = timeString.split(':');
   const suffix = hour >= 12 ? 'PM' : 'AM';
   const hour12 = hour % 12 || 12;
+  const out = `${hour12}:${minutes} ${suffix}`;
   return `${hour12}:${minutes} ${suffix}`;
+}
+// For format: '17:00:00'
+function makeAMPM(time) {
+  const [hour, minutes] = time.split(':');
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  const out = `${hour12}:${minutes} ${suffix}`;
+  return `${hour12}:${minutes} ${suffix}`;
+}
+
+// For format: '17:00:00', returns in format for date.setTime() param
+function timeToMilliseconds(timeString) {
+  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, seconds, 0);
+  return date.getTime();
 }
 
 function convertDateToLongFormat(date) {
@@ -63,4 +81,16 @@ async function checkTokenExpiration(token) {
   }
 }
 
-export { convertTimeToTwelveHourFormat, convertDateToLongFormat, isTimeBetween, checkTokenExpiration };
+function targetRestaurant(_name, _venueID, _daysInAdvance, _releaseTime, _partySize, _minResTime, _maxResTime, _resDate) {
+    this.name = _name;
+    this.venueID = _venueID;
+    this.daysInAdvance = _daysInAdvance;
+    this.releaseTime = _releaseTime;
+    this.partySize = _partySize;
+    this.minResTime = _minResTime;
+    this.maxResTime = _maxResTime;
+    this.resDate = _resDate;
+    this.triggerTime = null;
+}
+
+export { convertTimeToTwelveHourFormat, convertDateToLongFormat, isTimeBetween, checkTokenExpiration, targetRestaurant, makeAMPM };
